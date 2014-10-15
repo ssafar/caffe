@@ -206,7 +206,7 @@ message NetStateRule {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 43 (last added: reshape_param)
+// LayerParameter next available ID: 44 (last added: crop_param)
 message LayerParameter {
   repeated string bottom = 2; // the name of the bottom blobs
   repeated string top = 3; // the name of the top blobs
@@ -227,7 +227,7 @@ message LayerParameter {
   // line above the enum. Update the next available ID when you add a new
   // LayerType.
   //
-  // LayerType next available ID: 40 (last added: RESHAPE)
+  // LayerType next available ID: 41 (last added: CROP)
   enum LayerType {
     // "NONE" layer type is 0th enum element so that we don't cause confusion
     // by defaulting to an existent LayerType (instead, should usually error if
@@ -240,6 +240,7 @@ message LayerParameter {
     CONCAT = 3;
     CONTRASTIVE_LOSS = 37;
     CONVOLUTION = 4;
+    CROP = 40;
     DATA = 5;
     DROPOUT = 6;
     DUMMY_DATA = 32;
@@ -305,6 +306,7 @@ message LayerParameter {
   optional ConcatParameter concat_param = 9;
   optional ContrastiveLossParameter contrastive_loss_param = 40;
   optional ConvolutionParameter convolution_param = 10;
+  optional CropParameter crop_param = 43;
   optional DataParameter data_param = 11;
   optional DropoutParameter dropout_param = 12;
   optional DummyDataParameter dummy_data_param = 26;
@@ -416,6 +418,16 @@ message ConvolutionParameter {
     CUDNN = 2;
   }
   optional Engine engine = 15 [default = DEFAULT];
+}
+
+// Message that stores parameters used by CropLayer
+message CropParameter {
+  // crop_x and crop_y can be repeated 0, 1 or 2 times. With 0 elements, no
+  // cropping is done in the specified dimension. 1 element specifies symmetric
+  // cropping, while with 2 elements one can give different values on the left
+  // and right sides.
+  repeated int32 crop_h = 2;
+  repeated int32 crop_w = 1;
 }
 
 // Message that stores parameters used by DataLayer
