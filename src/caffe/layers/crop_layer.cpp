@@ -12,15 +12,19 @@ void CropLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   CHECK_EQ(bottom.size(), 1) << "Crop Layer takes a single blob as input.";
   CHECK_EQ(top.size(), 1) << "Crop Layer takes a single blob as output.";
 
-  // Expand parameters to crop amounts.
+  // These amounts signify how many pixels to crop from the sides, in number of
+  // elements.
   int crop_h_top = 0;
   int crop_h_bottom = 0;
   int crop_w_left = 0;
   int crop_w_right = 0;
 
   const CropParameter& crop_param = this->layer_param_.crop_param();
+
   CHECK_LE(crop_param.crop_h_size(), 2);
 
+  // For length 1 lists, we use the same value to crop from both
+  // sides. Otherwise use the two, possibly different, values.
   if (crop_param.crop_h_size() == 1) {
     crop_h_top = crop_param.crop_h(0);
     crop_h_bottom = crop_param.crop_h(0);
@@ -38,16 +42,20 @@ void CropLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     crop_w_left = crop_param.crop_w(0);
     crop_w_right = crop_param.crop_w(1);
   }
-  // If parameters are empty, they all keep their default values.
+  // If some of parameter lists are empty (zero length), the original, zero
+  // values for the respective crop_* variables aren't changed, resulting in not
+  // cropping elements in that direction.
 
   // Calculate crop limits.
   valid_h_begin = crop_h_top;
   valid_h_end = bottom[0]->height() - crop_h_bottom;
-  CHECK_GT(valid_h_end - valid_h_begin, 0) << "Crop output height should be greater than zero";
+  CHECK_GT(valid_h_end - valid_h_begin, 0)
+    << "Crop output height should be greater than zero";
 
   valid_w_begin = crop_w_left;
   valid_w_end = bottom[0]->width() - crop_w_right;
-  CHECK_GT(valid_w_end - valid_w_begin, 0) << "Crop output width should be greater than zero";
+  CHECK_GT(valid_w_end - valid_w_begin, 0)
+    << "Crop output width should be greater than zero";
 }
 
 template <typename Dtype>
@@ -67,8 +75,16 @@ void CropLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   for (int n = 0; n < top[0]->num(); ++n) {
     for (int c = 0; c < top[0]->channels(); ++c) {
       for (int h = valid_h_begin; h < valid_h_end; ++h) {
-        const Dtype* bottom_row_start = bottom_data + bottom[0]->offset(n, c, h, valid_w_begin);
-        Dtype* top_row_start = top_data + top[0]->offset(n, c, h - valid_h_begin, 0);
+        // Copy data by the row. Bottom layer rows start skipping the left side
+        // of the bottom layer (due to cropping), while the target area in the
+        // top layer starts right at the left side (0). On the other hand, h is
+        // the row id in the bottom layer (the loop iteration starts at
+        // valid_h_begin), so it needs to be offset for the top layer.
+        const Dtype* bottom_row_start = bottom_data +
+          bottom[0]->offset(n, c, h, valid_w_begin);
+        Dtype* top_row_start = top_data +
+          top[0]->offset(n, c, h - valid_h_begin, 0);
+
         caffe_copy(valid_w_end - valid_w_begin, bottom_row_start, top_row_start);
       }
     }
