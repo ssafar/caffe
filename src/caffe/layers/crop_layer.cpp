@@ -40,9 +40,6 @@ void CropLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   }
   // If parameters are empty, they all keep their default values.
 
-  printf("h top: %d h bottom: %d\n", crop_h_top, crop_h_bottom);
-  printf("w left: %d w right: %d\n", crop_w_left, crop_w_right);
-
   // Calculate crop limits.
   valid_h_begin = crop_h_top;
   valid_h_end = bottom[0]->height() - crop_h_bottom;
