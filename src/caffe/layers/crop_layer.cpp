@@ -120,5 +120,5 @@ STUB_GPU(PoolingLayer);
 #endif
 
 INSTANTIATE_CLASS(CropLayer);
-
+REGISTER_LAYER_CLASS(CROP, CropLayer);
 }   // namespace caffe
